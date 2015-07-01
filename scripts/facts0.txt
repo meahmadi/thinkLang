@@ -1,0 +1,3 @@
+t_rasololah isa ggtime y 650.
+t_ahlebeit starts t_rasololah.
+t_ahlebeit ends (_ isa ggtime y 800).# return value is first argument

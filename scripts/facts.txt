@@ -1,0 +1,70 @@
+#things are agents
+#places are simulation places
+#events check rules during action. events of objects
+
+p_donya isa place.
+p_barzakh isa place.
+p_shohood isa place.
+p_gheib isa place.
+p_donya below p_barzakh. #below above in contain for places
+p_donya in p_shohood.
+p_barzakh in p_shohood.
+p_shohood below p_gheib.
+
+t_donya isa time.
+t_rasolan isa time.
+t_ahlebeit isa time.
+t_rasolan before t_ahlebeit.
+t_rasolan during t_donya.
+t_ahlebeit during t_donya.
+
+ggtime is time year number=NA  month number=NA day number=NA.#define rule whenever something in ggtime it is in t_....
+
+t_rasololah isa ggtime y 650.
+t_ahlebeit starts t_rasololah.
+t_ahlebeit ends (_ isa ggtime y 800).# return value is first argument
+
+
+God is thing.
+rab ref God.
+zekr is event.# where to define zekr details
+rahmat is thing.#define rahmat
+adam is thing name word="" birth ggtime=(_ isa ggtime).
+
+doa is event who adam=NA from thing=God what word="" how word="".
+
+abd is adam. #define properties of abd
+rasool is adam.
+zakaria isa rasool name "zakaria" birth (_ isa ggtime y -70).
+
+donyaPlace is place x number=NA y number=NA w number=NA h number=NA.
+p_beitolmoghadas isa donyaPlace x 10 y 10.
+p_beitolmoghadas in p_donya.
+
+
+relativePlace is place where place x number=NA y number=NA.
+p_zakaria ref p_beitolmoghadas.
+
+Iran isa donyaPlace x 50 y 30 w 15 h 10.
+Iran.y = 31. #for primitive types only
+
+#rules.
+#(condition)(update condition) -> (fact).
+#it is important to reduce rule update
+
+( x? below y? ) -> ( y? above x? ).
+( x? isa donyaPlace; y? isa donyaPlace; x?.x <> y?.x [ y?.x + y?.w ];  x?.y <> y?.y [ y?.y + y?.h ] ) -> (x? in y?).
+
+
+#scenes.
+#scene_name: time,place;
+	#thing1;
+	#event1 arg1 arg2 arg3;
+	#inner_scene_name: time,place;
+		#thing2;
+#:scene_name;
+	#:inner_scene_name;
+ebadat_e_zakaria: (_ isa ggtime y 650), p_beitolmoghadas;
+	zakaria;
+	doa who zakaria what "god help me" how "khafia";
+:ebadat_e_zakaria;
