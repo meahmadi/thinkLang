@@ -49,13 +49,19 @@ class Engine(object):
 		
 		
 	def isa_(self,sbj,obj,args):
-		return self.link(sbj,obj,"isa",o1_args=args)
+		result = self.link(sbj,obj,"isa")
+		for k,v in args.items():
+			self.graph.setOnlyNodeParam(sbj,k,v)
+		return result
 
 	def ref_(self,sbj,obj):
 		return self.link(sbj,obj,"ref")
 
 	def fact_(self,sbj,obj,action,args):
-		return self.link(sbj,obj,action,o1_args=args)
+		result = self.link(sbj,obj,action)
+		for k,v in args.items():
+			self.graph.setOnlyNodeParam(sbj,k,v)
+		return result
 	
 	def has_(self,sbj,args):
 		for key in args:
