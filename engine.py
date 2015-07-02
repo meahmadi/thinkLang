@@ -1,5 +1,7 @@
-from lparser import parseLine
-import lnetwork
+import sys
+from lparser import LParser
+from lnetwork import DGraph
+import random
 _debug_ = 0
 
 class Engine(object):
@@ -12,7 +14,11 @@ class Engine(object):
 		
 		if _debug_>3 : print(self.data_path)
 		
-		self.graph = lnetwork.DGraph(self.data_path)
+		self.graph = DGraph(self.data_path)
+		self.parser = LParser(self) 
+	
+	def drawGraph(self):
+		self.graph.draw()
 		
 	def interpret(self,line):
 		global _debug_
@@ -22,61 +28,92 @@ class Engine(object):
 		
 		if _debug_>0 : print(line)
 		
-		parse = parseLine(line,_debug_>4)
+		self.parser.parseLine(line,_debug_>4)
 		
-		if parse is None:
-			self.syntaxError(line,parse)
-			return
-		
-		if _debug_>3 : print (type(parse),"\n", dir(parse),"\n", parse,"\n", dict(parse))
-		
-		if parse.isfact: self.interpret_isfact(parse)
-		elif parse.isafact: self.interpret_isafact(parse)
-		elif parse.reffact: self.interpret_reffact(parse)
-		elif parse.fact: self.interpret_otherfact(parse)
-		elif parse.rule: self.interpret_rule(parse)
-		elif parse.startscene: self.interpret_startscene(parse)
-		elif parse.endscene: self.interpret_endscene(parse)
-		elif parse.existance: self.interpret_existance(parse)
-		elif parse.comment: pass
-		elif _debug_>0 : print ("not supported")	#syntaxError(line,parse)
 
-	def interpret_isfact(self,parse):
-		if _debug_>1 : print ("isfact")
-		self.graph.G.add_edge(parse.isfact.sbj,parse.isfact.obj,type="is")
+	def link(self,o1,o2,type1,link_args={},o1_args={}):
+		if o1=="_":	o1 = "var_"+str(int(random.random()*100000000))
+		if o2=="_":	o2 = "var_"+str(int(random.random()*100000000))
 		
-	def interpret_isafact(self,parse):
-		if _debug_>1 : print ("isafact")
-		self.graph.G.add_edge(parse.isafact.sbj,parse.isafact.obj,type="isa")
-#		if parse.isafact.args:
-#			for arg in parse.isafact.args:
-#				self.graph.G.node[parse.isafact.sbj][arg[0]] = arg[1]
+		link_args["label"] = type1
 		
-	def interpret_reffact(self,parse):
-		if _debug_>1 : print ("reffact")
-		self.graph.G.add_edge(parse.reffact.sbj,parse.reffact.obj,type="ref")
+		self.graph.G.add_edge(o1,o2,**link_args)
+		for key in o1_args:
+			self.graph.G.node[o1][key] = o1_args[key]
+		return o1
+
+	def is_(self,sbj,obj, argdefs):
+		result = self.link(sbj,obj,"is")
+		self.has_(sbj,argdefs)
+		return result
 		
-	def interpret_otherfact(self,parse):
-		if _debug_>1 : print ("otherfact")
-		self.graph.G.add_edge(parse.fact.sbj,parse.fact.obj,type=parse.fact.action)
 		
-	def interpret_rule(self,parse):
+	def isa_(self,sbj,obj,args):
+		return self.link(sbj,obj,"isa",o1_args=args)
+
+	def ref_(self,sbj,obj):
+		return self.link(sbj,obj,"ref")
+
+	def fact_(self,sbj,obj,action,args):
+		return self.link(sbj,obj,action,o1_args=args)
+	
+	def has_(self,sbj,args):
+		for key in args:
+			type,default = args[key].split()
+			self.link(sbj,type,"has",{"name":key,"default":default})#,{key:args[key]})
+		return sbj
+	
+	def set_param_(self,tok):
+		# print(tok.assignmentfact)
+		tokens = tok.assignmentfact[0]
+		value = tok.assignmentfact[1]
+		# print ("tokens",tokens)
+		# print ("value",value)
+		
+		obj = tokens[:-1]
+		last = obj[0]
+		# print ("obj",obj)
+		# print ("last", last)
+		for arg in obj[1:]:
+			last = self.graph.getNodeForSet(last,arg)
+			# print ("last:",last)
+			if last == None:
+				print ("ERROR finding", ".".join(list(obj)))
+				return []
+		# print ("Setting",last,tokens[-1],value)
+		return self.graph.setOnlyNodeParam(last,tokens[-1],value)
+		
+		
+	def get_param_(self,tokens):
+		tokens = tokens[0]
+		last = tokens[0]
+		for arg in tokens[1:]:
+			last = self.graph.getNodeParam(last,arg)
+			if last == None:
+				print ("ERROR finding", ".".join(list(tokens)))
+				return []
+		return last
+
+	
+	def rule_(self):
 		if _debug_>1 : print ("rule")
 
-	def interpret_startscene(self,parse):
+	def start_scene(self):
 		if _debug_>1 : print ("startscene")
 		
-	def interpret_endscene(self,parse):
+	def end_scene(self):
 		if _debug_>1 : print ("endscene")
 		
-	def interpret_existance(self,parse):
+	def exists_(self):
 		if _debug_>1 : print ("existance")	
-		
-	def syntaxError(self,line,parse):
-		print("Syntax Error:%s"%line)
-		exit(1)
 	
-
+	
+	def say_global_(self,tokens):
+		print(tokens[1])
+		return None
+	def say_scene_ (self,tokens):
+		return self.say_global_(tokens)
+	
 
 if __name__ == "__main__":
 	import argparse
@@ -85,6 +122,8 @@ if __name__ == "__main__":
 	parser.add_argument("-v","--verbose", help="increase verbose",  type=int, choices=[0, 1, 2, 3, 4, 5], default=0)
 	parser.add_argument("-i", "--inputfile", help="input file name", type=argparse.FileType('rt'),  action="store",  default=None)
 	parser.add_argument("-d", "--data", help="engin data file", type=str,  action="store",  default=None)
+	parser.add_argument("-q", "--quiet", help="run input file and exit", action='store_true', default=False)
+	parser.add_argument("-s", "--show", help="show graph at execution end", action='store_true', default=False)
 	args = parser.parse_args()
 	
 	if args.verbose:
@@ -100,3 +139,10 @@ if __name__ == "__main__":
 		for l in args.inputfile:
 			engine.interpret(l)
 	engine.graph.writeData()
+	if args.show:
+		engine.drawGraph()
+	
+	if not args.quiet:
+		for line in sys.stdin:
+			engine.interpret(line)
+			engine.graph.writeData()

@@ -68,3 +68,40 @@ ebadat_e_zakaria: (_ isa ggtime y 650), p_beitolmoghadas;
 	zakaria;
 	doa who zakaria what "god help me" how "khafia";
 :ebadat_e_zakaria;
+
+
+
+
+#---------------------
+
+donyaPlace is place name word='somewhere' x number=NA y number=NA w number=NA h number=NA.
+Iran isa donyaPlace x 50 y 30 w 15 h 10.
+donyaPlace has  center donyaPlace=NA.
+
+Iran.y = 31. #for primitive types only
+say Iran.y.
+
+say Iran.center.
+Iran.center.name = 'tehran'.
+say Iran.center.name.
+say donyaPlace.x.
+say Iran.y.
+say donyaPlace.name.
+say Iran.name.
+say Iran.f.
+say donyaPlace.center.y.
+say Iran.center.y.
+say Iran.center.name.
+
+person is thing name word=NA.
+adam isa person name "ADAM".
+we is person father person=adam.
+i isa we.
+say i.father.name.
+say i.father.
+i.father.name = 'aadam'.
+say adam.name.
+
+noah isa person name 'noah'.
+i.father = noah.
+say i.father.name.
