@@ -42,7 +42,7 @@ p_beitolmoghadas isa donyaPlace x 10 y 10.
 p_beitolmoghadas in p_donya.
 
 
-relativePlace is place where place x number=NA y number=NA.
+relativePlace is place  x number=NA y number=NA.
 p_zakaria ref p_beitolmoghadas.
 
 Iran isa donyaPlace x 50 y 30 w 15 h 10.
@@ -73,6 +73,7 @@ ebadat_e_zakaria: (_ isa ggtime y 650), p_beitolmoghadas;
 
 
 #---------------------
+
 
 donyaPlace is place name word='somewhere' x number=NA y number=NA w number=NA h number=NA.
 Iran isa donyaPlace x 50 y 30 w 15 h 10.
@@ -105,3 +106,16 @@ say adam.name.
 noah isa person name 'noah'.
 i.father = noah.
 say i.father.name.
+
+humanoid ref we.
+
+you isa humanoid.
+say you.father.name.
+
+we.father = noah.
+say you.father.name.
+
+you isa donyaPlace  x 50 y 30 w 15 h 10.
+say you.x.
+say you.father.name.
+

@@ -141,7 +141,12 @@ class LParser(object):
 		self.endScene = Suppress(":") + self.name.setResultsName("endscene")
 		self.existance = Group(self.name.setResultsName('sbj') + ZeroOrMore(self.argument).setResultsName("args")).setResultsName("existance")
 
-		self.value << Or( [  (self.LPAREN + self.fact + self.RPAREN).setResultsName("factvalue")  , Combine(Optional("-")+Word(alphanums + "_")), dblQuotedString, quotedString, self.mathValue ] )
+		self.value << Or( [  (self.LPAREN + self.fact + self.RPAREN).setResultsName("factvalue")  ,
+							Combine(Optional("-")+Word(alphanums + "_")),
+							dblQuotedString, 
+							quotedString, 
+							#self.mathValue 
+							] )
 					
 		self.say = Literal("say") + Or([self.identifier, self.value, self.gparameter.setParseAction(self.fn_getparameter)])
 					

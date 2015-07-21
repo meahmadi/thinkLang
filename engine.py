@@ -8,11 +8,11 @@ class Engine(object):
 	def __init__(self,data_path=None):
 		global _debug_
 		
-		if _debug_>3 : print("init Engine.....")
+		if _debug_>3 : print("> init Engine.....")
 		
 		self.data_path = data_path
 		
-		if _debug_>3 : print(self.data_path)
+		if _debug_>3 : print("> ",self.data_path)
 		
 		self.graph = DGraph(self.data_path)
 		self.parser = LParser(self) 
@@ -26,7 +26,7 @@ class Engine(object):
 		if len(line.strip())==0:
 			return
 		
-		if _debug_>0 : print(line)
+		if _debug_>0 : print("> ",line.strip())
 		
 		self.parser.parseLine(line,_debug_>4)
 		
@@ -37,10 +37,7 @@ class Engine(object):
 		
 		link_args["label"] = type1
 		
-		self.graph.G.add_edge(o1,o2,**link_args)
-		for key in o1_args:
-			self.graph.G.node[o1][key] = o1_args[key]
-		return o1
+		return self.graph.createLink(o1,o2,link_args,o1_args)
 
 	def is_(self,sbj,obj, argdefs):
 		result = self.link(sbj,obj,"is")
@@ -83,8 +80,8 @@ class Engine(object):
 		for arg in obj[1:]:
 			last = self.graph.getNodeForSet(last,arg)
 			# print ("last:",last)
-			if last == None:
-				print ("ERROR finding", ".".join(list(obj)))
+			if last == None or len(last)==0:
+				print ("> ERROR finding", ".".join(list(obj)))
 				return []
 		# print ("Setting",last,tokens[-1],value)
 		return self.graph.setOnlyNodeParam(last,tokens[-1],value)
@@ -96,22 +93,22 @@ class Engine(object):
 		for arg in tokens[1:]:
 			last = self.graph.getNodeParam(last,arg)
 			if last == None:
-				print ("ERROR finding", ".".join(list(tokens)))
+				print ("> ERROR finding", ".".join(list(tokens)))
 				return []
 		return last
 
 	
 	def rule_(self):
-		if _debug_>1 : print ("rule")
+		if _debug_>1 : print ("> rule")
 
 	def start_scene(self):
-		if _debug_>1 : print ("startscene")
+		if _debug_>1 : print ("> startscene")
 		
 	def end_scene(self):
-		if _debug_>1 : print ("endscene")
+		if _debug_>1 : print ("> endscene")
 		
 	def exists_(self):
-		if _debug_>1 : print ("existance")	
+		if _debug_>1 : print ("> existance")	
 	
 	
 	def say_global_(self,tokens):
@@ -129,7 +126,7 @@ if __name__ == "__main__":
 	parser.add_argument("-i", "--inputfile", help="input file name", type=argparse.FileType('rt'),  action="store",  default=None)
 	parser.add_argument("-d", "--data", help="engin data file", type=str,  action="store",  default=None)
 	parser.add_argument("-q", "--quiet", help="run input file and exit", action='store_true', default=False)
-	parser.add_argument("-s", "--show", help="show graph at execution end", action='store_true', default=False)
+	parser.add_argument("-s", "--draw", help="draw graph at execution end", action='store_true', default=False)
 	args = parser.parse_args()
 	
 	if args.verbose:
@@ -145,10 +142,12 @@ if __name__ == "__main__":
 		for l in args.inputfile:
 			engine.interpret(l)
 	engine.graph.writeData()
-	if args.show:
+	if args.draw:
 		engine.drawGraph()
 	
 	if not args.quiet:
 		for line in sys.stdin:
 			engine.interpret(line)
 			engine.graph.writeData()
+			if args.draw:
+				engine.drawGraph()
