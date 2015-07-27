@@ -1,36 +1,49 @@
 import os
-import networkx as nx
-import matplotlib.pyplot as plt
+from graph import Graph
 
 class DGraph(object):
 	def __init__(self,path=None):
 		self.fpath = path
+		if self.fpath==None:
+			self.fpath = "memory.db"
 		self.initData()
 
+	def initData(self):
+		#Setting to always init data :)
+		if True or self.fpath is None or not os.path.exists(self.fpath):
+			self.initialGraph()
+		else:
+			self.G = Graph(self.fpath,keepOld=True)
+			
+	def writeData(self, fpath=None):
+		self.G.commit()
 
-	def draw(self):
-		pos=nx.spring_layout(self.G,scale=5,iterations=100)
-		plt.title("Memory Graph")
-		nx.draw(self.G,pos,node_color='#A0CBE2',width=0.2,edge_cmap=plt.cm.Blues,with_labels=True,font_size=12, node_size=30)
+	def initialGraph(self):
+		self.G = Graph(self.fpath)
+		self.G.addEdge('_',"time")
+		self.G.addEdge('_',"place")
+		self.G.addEdge('_',"thing")
+		self.G.addEdge('_', "number")
+		self.G.addEdge('_', "event")
+		self.G.addEdge('_', "word")
+
 		
-		labels = {}
-		for u,v,d in self.G.edges_iter(data=True):
-			if "label" in d:
-				labels[(u,v)]=d["label"]
-		nx.draw_networkx_edge_labels(self.G,pos,labels,clip_on=False,font_size=8)
+	def draw(self):
+		#pos=nx.spring_layout(self.G,scale=5,iterations=100)
+		#plt.title("Memory Graph")
+		#nx.draw(self.G,pos,node_color='#A0CBE2',width=0.2,edge_cmap=plt.cm.Blues,with_labels=True,font_size=12, node_size=30)
+		
+		#labels = {}
+		#for u,v,d in self.G.edges_iter(data=True):
+		#	if "label" in d:
+		#		labels[(u,v)]=d["label"]
+		#nx.draw_networkx_edge_labels(self.G,pos,labels,clip_on=False,font_size=8)
 		
 		# scale the axes equally
-		plt.savefig("out.png",dpi=600)
-		plt.show()
-		
-	def initialGraph(self):
-		self.G = nx.DiGraph()
-		self.G.add_edge('_',"time")
-		self.G.add_edge('_',"place")
-		self.G.add_edge('_',"thing")
-		self.G.add_edge('_', "number")
-		self.G.add_edge('_', "event")
-		self.G.add_edge('_', "word")
+		#plt.savefig("out.png",dpi=600)
+		#plt.show()
+		pass
+
 		
 	def hasNodeParam(self,node,param):
 		return not(self.getNodeParam == None)
@@ -38,37 +51,70 @@ class DGraph(object):
 	def getOnlyNodeParam(self,nodes,param):
 		if type(nodes) is not type([]):
 			nodes = [nodes]
-		self.getRefNodes(nodes)
+		self.getRefNodeIDs(nodes)
 		for node in nodes:
-			has = [v for u,v,d in self.G.edges_iter(data=True) if u==node and  "label" in d and d["label"]=="has_"+param]
-			if len(has)>0:
-				self.getRefNodes(has)
-				return has
+			nodeid = self.G.getNode(node)
+			hasp = self.G.getRelations( inid = nodeid, label= "has_"+param )
+			#has = [v for u,v,d in self.G.edges_iter(data=True) if u==node and  "label" in d and d["label"]=="has_"+param]
+			if len(hasp)>0:
+				hasp_names = self.G.getNodesNames(hasp)
+				self.getRefNodes(hasp_names)
+				return hasp_names
 		
-			params = [d[param] for n,d in self.G.nodes_iter(data=True) if n==node and param in d]
-			if len(params)>0:
-				self.getRefNodes(params)
+			params = self.G.getAttrib(nodeid,param)
+			#params = [d[param] for n,d in self.G.nodes_iter(data=True) if n==node and param in d]
+			if params is not None:
 				return params
 			
-			defhas = [d["default"] for u,v,d in self.G.edges_iter(data=True) if u==node and  "label" in d and d["label"]=="has" and d["name"]==param]
+			defhas = list( filter((lambda x: x is not None), [self.G.getAttrib(x,"default") for x in  self.G.getRelations( inid = nodeid, label = "has" , args = {"name":param})] ) )
+			#defhas = [d["default"] for u,v,d in self.G.edges_iter(data=True) if u==node and  "label" in d and d["label"]=="has" and d["name"]==param]
 			if len(defhas)>0:
-				self.getRefNodes(defhas)
-				return defhas
+				defhas_names = self.G.getNodesNames(defhas)
+				self.getRefNodes(defhas_names)
+				return defhas_names
 		return []
 
 	def getOutLabeledNode(self,node,label,get_ref_nodes=True):
-		result = [v for u,v,d in self.G.edges_iter(data=True) if u==node and "label" in d and d["label"]==label]
+		nodeid = self.G.getNode(node)
+		result = self.G.getRelations(inid=nodeid,label=label)
+		result_names = self.G.getNodesNames(result)
+		#result = [v for u,v,d in self.G.edges_iter(data=True) if u==node and "label" in d and d["label"]==label]
 		if get_ref_nodes:
-			self.getRefNodes(result)
-		#print("outlabels:",node,label,result)
-		return 	result
+			self.getRefNodes(result_names)
+		return 	result_names
 	def getInLabeledNode(self,node,label,get_ref_nodes=True):
-		result = [v for u,v,d in self.G.edges_iter(data=True) if v==node and "label" in d and d["label"]==label]		
+		nodeid = self.getNode(node)
+		result = self.G.getRelations(outid=nodeid,label=label)
+		result_names = self.G.getNodesNames(result)
+		#result = [v for u,v,d in self.G.edges_iter(data=True) if v==node and "label" in d and d["label"]==label]		
 		if get_ref_nodes:
-			self.getRefNodes(result)
-		#print("inlabels:",node,label,result)
-		return 	result
+			self.getRefNodes(result_names)
+		return 	result_names
 		
+	def getRefNodeIDs(self,nodes,exclude=None,):
+		if exclude == None:
+			exclude = []
+		x1 = self.G.getNodesNames(nodes)
+		x2 = self.G.getNodesNames(exclude)
+		self.getRefNodes(x1,x2)
+		x1_id = self.G.getNodesIDs(x1)
+		x2_id = self.G.getNodesIDs(x2)
+		for x in x1_id:
+			if x not in nodes:nodes.append(x)
+		to_delete = []
+		for x in nodes:
+			if x not in x1_id:to_delete.append(x)
+		for x in to_delete:
+			nodes.remove(x)
+	
+		for x in x2_id:
+			if x not in exclude:exclude.append(x)
+		to_delete = []
+		for x in exclude:
+			if x not in x2_id:to_delete.append(x)
+		for x in to_delete:
+			exclude.remove(x)
+	
 	def getRefNodes(self,nodes,exclude=None,):
 		if exclude == None:
 			exclude = []
@@ -98,7 +144,7 @@ class DGraph(object):
 		return self.getOutLabeledNode(node,"is")
 	
 	
-	def createLink(self,o1,o2,link_args={},o1_args={}):
+	def createLink(self,o1,o2,label="",link_args={},o1_args={}):
 		if type(o1) is not type([]):
 			o1s = [o1]
 		else:
@@ -113,9 +159,9 @@ class DGraph(object):
 		#print(o1s,o2s)
 		for o1 in o1s:
 			for o2 in o2s:
-				self.G.add_edge(o1,o2,**link_args)
-				for key in o1_args:
-					self.G.node[o1][key] = o1_args[key]
+				self.G.addEdge(o1,o2,label,link_args)
+				if len(o1_args)>0:
+					self.G.updateAttribs(self.G.getNode(o1),o1_args)
 		return o1s
 	
 	
@@ -147,19 +193,21 @@ class DGraph(object):
 				refValue = False
 			else:
 				try:
-					t = float(value)
+					t = float(value)  # @UnusedVariable
 					refValue = False
 				except ValueError:
 					pass
 
 			if not refValue:
-				self.G.node[node][param] = value
+				self.G.updateAttrib(self.G.getNode(node),param,value)
+				#self.G.node[node][param] = value
 				result.append(value)
 			else:
 				values = [value]
 				self.getRefNodes(values)
 				for v in values:
-					self.G.add_edge(node,v,label="has_"+param)
+					self.G.addEdge(node,v,"has_"+param)
+					#self.G.add_edge(node,v,label="has_"+param)
 				result.extend(values)
 		return result
 
@@ -174,25 +222,7 @@ class DGraph(object):
 				newNodes.extend( self.getISANode(x) )
 				newNodes.extend( self.getISNode(x) )
 			nodes = newNodes	
-	
-	def initData(self):
-		#Setting to always init data :)
-		if True or self.fpath is None or not os.path.exists(self.fpath):
-			self.initialGraph()
-		else:
-			self.G = nx.read_gml(self.fpath)
-			
-	def writeData(self, fpath=None):
-		if fpath==None:
-			fp = self.fpath
-		else:
-			fp = fpath
-		if fp==None:
-			fp = "data.gml"
-		if os.path.exists(fp):
-			os.remove(fp)
-		nx.write_gml(self.G,fp)
-	
+		
 	
 if __name__ == "__main__":
 	g = DGraph()

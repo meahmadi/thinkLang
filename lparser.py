@@ -1,7 +1,8 @@
 import sys
 import functools
 import inspect
-from pyparsing import *
+from pyparsing import *  # @UnusedWildImport
+
 
 def parse_action(f):
 	"""
@@ -34,6 +35,7 @@ def parse_action(f):
 			return f(*x)
 		except TypeError as e:
 			action.exc_info = sys.exc_info()
+			print(e)
 			raise
 
 	action.exc_info = None

@@ -35,9 +35,7 @@ class Engine(object):
 		if o1=="_":	o1 = "var_"+str(int(random.random()*100000000))
 		if o2=="_":	o2 = "var_"+str(int(random.random()*100000000))
 		
-		link_args["label"] = type1
-		
-		return self.graph.createLink(o1,o2,link_args,o1_args)
+		return self.graph.createLink(o1,o2,type1,link_args,o1_args)
 
 	def is_(self,sbj,obj, argdefs):
 		result = self.link(sbj,obj,"is")
@@ -62,8 +60,8 @@ class Engine(object):
 	
 	def has_(self,sbj,args):
 		for key in args:
-			type,default = args[key].split()
-			self.link(sbj,type,"has",{"name":key,"default":default})#,{key:args[key]})
+			typ,default = args[key].split()
+			self.link(sbj,typ,"has",{"name":key,"default":default})#,{key:args[key]})
 		return sbj
 	
 	def set_param_(self,tok):
@@ -141,13 +139,11 @@ if __name__ == "__main__":
 	else:
 		for l in args.inputfile:
 			engine.interpret(l)
-	engine.graph.writeData()
 	if args.draw:
 		engine.drawGraph()
 	
 	if not args.quiet:
 		for line in sys.stdin:
 			engine.interpret(line)
-			engine.graph.writeData()
 			if args.draw:
 				engine.drawGraph()
